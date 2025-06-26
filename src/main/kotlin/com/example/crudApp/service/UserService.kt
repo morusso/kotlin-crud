@@ -40,6 +40,7 @@ class UserService(
             .orElseThrow { NotFoundException() }
 
         val updatedUser = existingUser.copy(
+            username = userRequestDTO.username,
             email = userRequestDTO.email,
             firstName = userRequestDTO.firstName,
             lastName = userRequestDTO.lastName,
