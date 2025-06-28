@@ -12,7 +12,7 @@ fun extractTokenFromHeader(authHeader: String): String? {
 
 // JWT data class
 data class TokenInfo(
-    val userId: String,
+    val userId: String?,
     val username: String?,
     val email: String?,
     val issuedAt: Date?,

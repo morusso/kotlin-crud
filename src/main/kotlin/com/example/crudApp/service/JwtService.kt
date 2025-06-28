@@ -1,12 +1,4 @@
 package com.example.crudApp.service
-
-
-import com.auth0.jwt.JWT
-import com.auth0.jwt.algorithms.Algorithm
-import com.auth0.jwt.exceptions.JWTCreationException
-import com.auth0.jwt.exceptions.JWTVerificationException
-import com.auth0.jwt.interfaces.DecodedJWT
-import com.example.crudApp.util.TokenInfo
 import org.springframework.stereotype.Service
 import java.security.KeyPair
 import java.security.KeyPairGenerator
@@ -15,139 +7,118 @@ import java.security.interfaces.RSAPublicKey
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.*
+import com.nimbusds.jose.EncryptionMethod
+import com.nimbusds.jose.JWEAlgorithm
+import com.nimbusds.jose.JWEHeader
+import com.nimbusds.jose.crypto.RSADecrypter
+import com.nimbusds.jose.crypto.RSAEncrypter
+import com.nimbusds.jwt.EncryptedJWT
+import com.nimbusds.jwt.JWTClaimsSet
 import jakarta.annotation.PostConstruct
+import com.example.crudApp.util.TokenInfo
 
 @Service
 class JwtService {
 
-    private lateinit var algorithm: Algorithm
     private lateinit var privateKey: RSAPrivateKey
     private lateinit var publicKey: RSAPublicKey
 
-    @PostConstruct
-    fun init() {
-        generateRSAKeys()
-        algorithm = Algorithm.RSA256(publicKey, privateKey)
-    }
+    /* --------------------------- RSA keys --------------------------- */
 
-    // generate rsa keys
+    @PostConstruct
+    fun init() = generateRSAKeys()
+
     private fun generateRSAKeys() {
-        val keyPairGenerator = KeyPairGenerator.getInstance("RSA")
-        keyPairGenerator.initialize(2048)
-        val keyPair: KeyPair = keyPairGenerator.generateKeyPair()
+        val keyPair: KeyPair = KeyPairGenerator.getInstance("RSA")
+            .apply { initialize(2048) }
+            .generateKeyPair()
 
         privateKey = keyPair.private as RSAPrivateKey
-        publicKey = keyPair.public as RSAPublicKey
-
-        println("RSA keys:")
-        println("Public Key: ${Base64.getEncoder().encodeToString(publicKey.encoded)}")
-        println("Private Key: ${Base64.getEncoder().encodeToString(privateKey.encoded)}")
+        publicKey  = keyPair.public  as RSAPublicKey
     }
 
-    // generate JWT token
+    /* -------------------------- generate JWE ----------------------- */
+
     fun generateToken(
         userId: String,
         username: String,
         email: String,
         expirationMinutes: Long = 60
     ): String {
-        return try {
-            val expirationTime = Instant.now().plus(expirationMinutes, ChronoUnit.MINUTES)
+        val now        = Instant.now()
+        val expiresAt  = now.plus(expirationMinutes, ChronoUnit.MINUTES)
 
-            JWT.create()
-                .withIssuer("kotlin-jwt-rsa-app")
-                .withSubject(userId)
-                .withClaim("username", username)
-                .withClaim("email", email)
-                .withIssuedAt(Date.from(Instant.now()))
-                .withExpiresAt(Date.from(expirationTime))
-                .withJWTId(UUID.randomUUID().toString())
-                .sign(algorithm)
-        } catch (exception: JWTCreationException) {
-            throw RuntimeException("Błąd podczas tworzenia tokenu JWT", exception)
-        }
+        val claims = JWTClaimsSet.Builder()
+            .subject(userId)
+            .issuer("kotlin-jwe-app")
+            .issueTime(Date.from(now))
+            .expirationTime(Date.from(expiresAt))
+            .claim("username", username)
+            .claim("email",    email)
+            .jwtID(UUID.randomUUID().toString())
+            .build()
+
+        val header = JWEHeader.Builder(JWEAlgorithm.RSA_OAEP_256, EncryptionMethod.A256GCM)
+            .contentType("JWT")
+            .build()
+
+        return EncryptedJWT(header, claims).apply {
+            encrypt(RSAEncrypter(publicKey))
+        }.serialize()
     }
 
-    // verify JWT token
-    fun verifyToken(token: String): DecodedJWT {
-        return try {
-            val verifier = JWT.require(algorithm).build()
-            verifier.verify(token)
-        } catch (exception: JWTVerificationException) {
-            throw RuntimeException("Nieprawidłowy token JWT: ${exception.message}", exception)
-        }
-    }
+    /* ------------------------- decrypt ------------------------ */
 
-    // check token is valid
-    fun isTokenValid(token: String): Boolean {
-        return try {
-            verifyToken(token)
-            true
-        } catch (exception: RuntimeException) {
-            false
+    /** Zwraca odszyfrowany obiekt `EncryptedJWT` lub rzuca `RuntimeException`. */
+    private fun decryptToken(token: String): EncryptedJWT =
+        EncryptedJWT.parse(token).apply {
+            decrypt(RSADecrypter(privateKey))
         }
-    }
 
-    // get user ID from JWT
-    fun getUserIdFromToken(token: String): String? {
-        return try {
-            val decodedJWT = verifyToken(token)
-            decodedJWT.subject
-        } catch (exception: RuntimeException) {
-            null
-        }
-    }
+    /* --------------------------- utils ----------------------------- */
 
-    // get username from JWT
-    fun getUsernameFromToken(token: String): String? {
-        return try {
-            val decodedJWT = verifyToken(token)
-            decodedJWT.getClaim("username").asString()
-        } catch (exception: RuntimeException) {
-            null
-        }
-    }
-
-    // get email from JWT
-    fun getEmailFromToken(token: String): String? {
-        return try {
-            val decodedJWT = verifyToken(token)
-            decodedJWT.getClaim("email").asString()
-        } catch (exception: RuntimeException) {
-            null
-        }
-    }
-
-    // check token expired
-    fun isTokenExpired(token: String): Boolean {
-        return try {
-            val decodedJWT = verifyToken(token)
-            decodedJWT.expiresAt.before(Date())
-        } catch (exception: RuntimeException) {
-            true
-        }
-    }
-
-    // get all data from JWT
     fun getTokenInfo(token: String): TokenInfo? {
         return try {
-            val decodedJWT = verifyToken(token)
+            val decryptedJWT = decryptToken(token)
+            val claims = decryptedJWT.jwtClaimsSet
             TokenInfo(
-                userId = decodedJWT.subject,
-                username = decodedJWT.getClaim("username").asString(),
-                email = decodedJWT.getClaim("email").asString(),
-                issuedAt = decodedJWT.issuedAt,
-                expiresAt = decodedJWT.expiresAt,
-                issuer = decodedJWT.issuer,
-                jwtId = decodedJWT.id
+                userId = claims.subject,
+                username = claims.getStringClaim("username"),
+                email = claims.getStringClaim("email"),
+                issuedAt = claims.issueTime,
+                expiresAt = claims.expirationTime,
+                issuer = claims.issuer,
+                jwtId = claims.getStringClaim("jti")
             )
-        } catch (exception: RuntimeException) {
+        } catch (e: Exception) {
             null
         }
     }
 
-    // get public key
-    fun getPublicKeyBase64(): String {
-        return Base64.getEncoder().encodeToString(publicKey.encoded)
-    }
+    fun isTokenValid(token: String): Boolean = runCatching {
+        val decryptedJWT = decryptToken(token)
+        val exp = decryptedJWT.jwtClaimsSet.expirationTime
+        exp.after(Date())
+    }.getOrElse { false }
+
+    fun isTokenExpired(token: String): Boolean = !isTokenValid(token)
+
+    fun getUserIdFromToken(token: String): String? = runCatching {
+        decryptToken(token).jwtClaimsSet.subject
+    }.getOrNull()
+
+    fun getUsernameFromToken(token: String): String? = runCatching {
+        decryptToken(token).jwtClaimsSet.getStringClaim("username")
+    }.getOrNull()
+
+    fun getEmailFromToken(token: String): String? = runCatching {
+        decryptToken(token).jwtClaimsSet.getStringClaim("email")
+    }.getOrNull()
+
+    fun getJwtIdFromToken(token: String): String? = runCatching {
+        decryptToken(token).jwtClaimsSet.getStringClaim("jti")
+    }.getOrNull()
+
+    fun getPublicKeyBase64(): String =
+        Base64.getEncoder().encodeToString(publicKey.encoded)
 }
