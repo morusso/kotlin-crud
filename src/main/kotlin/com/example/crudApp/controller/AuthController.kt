@@ -14,7 +14,7 @@ import org.springframework.validation.BindingResult
 import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/api/auth")
 class AuthController(
     private val userService: UserService,
     private val jwtService: JwtService
