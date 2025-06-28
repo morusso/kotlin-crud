@@ -56,31 +56,27 @@ class UserService(
     }
 
     fun loginUser(loginRequest: LoginRequestDTO): AuthResponseDTO {
-        // Znajdź użytkownika po nazwie
         val user = userRepository.findByUsername(loginRequest.username)
-            .orElseThrow { RuntimeException("Nieprawidłowa nazwa użytkownika lub hasło") }
+            .orElseThrow { RuntimeException("invalid login or password") }
 
-        // Sprawdź hasło
         if (!passwordEncoder.matches(loginRequest.password, user.password)) {
-            throw RuntimeException("Nieprawidłowa nazwa użytkownika lub hasło")
+            throw RuntimeException("invalid login or password")
         }
 
-        // Sprawdź czy konto jest aktywne
         if (!user.isActive) {
-            throw RuntimeException("Konto użytkownika jest nieaktywne")
+            throw RuntimeException("account not active")
         }
 
-        // Wygeneruj token JWT
         val token = jwtService.generateToken(
             userId = user.id.toString(),
             username = user.username,
             email = user.email,
-            expirationMinutes = 60 * 24 // 24 godziny
+            expirationMinutes = 60 * 24 // 24 h
         )
 
         return AuthResponseDTO(
             token = token,
-            expiresIn = 60 * 60 * 24, // 24 godziny w sekundach
+            expiresIn = 60 * 60 * 24, // 24 h
             user = UserResponseDTO(
                 id = user.id,
                 username = user.username,
