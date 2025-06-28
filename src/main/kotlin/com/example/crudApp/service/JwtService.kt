@@ -16,6 +16,10 @@ import com.nimbusds.jwt.EncryptedJWT
 import com.nimbusds.jwt.JWTClaimsSet
 import jakarta.annotation.PostConstruct
 import com.example.crudApp.util.TokenInfo
+import java.io.File
+import java.security.KeyFactory
+import java.security.spec.PKCS8EncodedKeySpec
+import java.security.spec.X509EncodedKeySpec
 
 @Service
 class JwtService {
@@ -26,15 +30,54 @@ class JwtService {
     /* --------------------------- RSA keys --------------------------- */
 
     @PostConstruct
-    fun init() = generateRSAKeys()
+    fun init() = getOrGenerateRSAKeys()
 
-    private fun generateRSAKeys() {
-        val keyPair: KeyPair = KeyPairGenerator.getInstance("RSA")
-            .apply { initialize(2048) }
-            .generateKeyPair()
+    private fun getOrGenerateRSAKeys() {
+        val keysDir = File("src/main/resources/keys") // katalog roboczy projektu
+        if (!keysDir.exists()) keysDir.mkdirs()
 
-        privateKey = keyPair.private as RSAPrivateKey
-        publicKey  = keyPair.public  as RSAPublicKey
+        val privateKeyFile = File(keysDir, "private_key.pem")
+        val publicKeyFile = File(keysDir, "public_key.pem")
+
+        if (privateKeyFile.exists() && publicKeyFile.exists()) {
+            privateKey = readPrivateKeyFromPem(privateKeyFile)
+            publicKey = readPublicKeyFromPem(publicKeyFile)
+        } else {
+            val keyPair = KeyPairGenerator.getInstance("RSA").apply {
+                initialize(2048)
+            }.generateKeyPair()
+
+            privateKey = keyPair.private as RSAPrivateKey
+            publicKey = keyPair.public as RSAPublicKey
+
+            writeKeyToPemFile(privateKeyFile, "PRIVATE KEY", privateKey.encoded)
+            writeKeyToPemFile(publicKeyFile, "PUBLIC KEY", publicKey.encoded)
+        }
+    }
+
+    private fun writeKeyToPemFile(file: File, type: String, encoded: ByteArray) {
+        val base64 = Base64.getMimeEncoder(64, "\n".toByteArray()).encodeToString(encoded)
+        file.writeText("-----BEGIN $type-----\n$base64\n-----END $type-----\n")
+    }
+
+    private fun readPrivateKeyFromPem(file: File): RSAPrivateKey {
+        val content = file.readText()
+            .replace("-----BEGIN PRIVATE KEY-----", "")
+            .replace("-----END PRIVATE KEY-----", "")
+            .replace("\\s".toRegex(), "")
+        val decoded = Base64.getDecoder().decode(content)
+        val keySpec = PKCS8EncodedKeySpec(decoded)
+        return KeyFactory.getInstance("RSA").generatePrivate(keySpec) as RSAPrivateKey
+    }
+
+    private fun readPublicKeyFromPem(file: File): RSAPublicKey {
+        val content = file.readText()
+            .replace("-----BEGIN PUBLIC KEY-----", "")
+            .replace("-----END PUBLIC KEY-----", "")
+            .replace("\\s".toRegex(), "")
+        val decoded = Base64.getDecoder().decode(content)
+        val keySpec = X509EncodedKeySpec(decoded)
+        return KeyFactory.getInstance("RSA").generatePublic(keySpec) as RSAPublicKey
     }
 
     /* -------------------------- generate JWE ----------------------- */
