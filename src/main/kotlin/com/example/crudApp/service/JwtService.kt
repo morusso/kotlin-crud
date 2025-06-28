@@ -6,14 +6,12 @@ import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.exceptions.JWTCreationException
 import com.auth0.jwt.exceptions.JWTVerificationException
 import com.auth0.jwt.interfaces.DecodedJWT
+import com.example.crudApp.util.TokenInfo
 import org.springframework.stereotype.Service
-import java.security.KeyFactory
 import java.security.KeyPair
 import java.security.KeyPairGenerator
 import java.security.interfaces.RSAPrivateKey
 import java.security.interfaces.RSAPublicKey
-import java.security.spec.PKCS8EncodedKeySpec
-import java.security.spec.X509EncodedKeySpec
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.*
@@ -153,14 +151,3 @@ class JwtService {
         return Base64.getEncoder().encodeToString(publicKey.encoded)
     }
 }
-
-// JWT data class
-data class TokenInfo(
-    val userId: String,
-    val username: String?,
-    val email: String?,
-    val issuedAt: Date?,
-    val expiresAt: Date?,
-    val issuer: String?,
-    val jwtId: String?
-)
