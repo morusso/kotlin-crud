@@ -37,5 +37,10 @@ build/
 ### Mac OS ###
 .DS_Store
 
+
+### app secrets
 src/main/resources/application-secrets.properties
+
+### RSA keys
+*.pem
 
