@@ -51,6 +51,29 @@
             <version>42.5.0</version>
         </dependency>
 
+        <!-- Java JWT (Auth0) -->
+        <dependency>
+            <groupId>com.auth0</groupId>
+            <artifactId>java-jwt</artifactId>
+            <version>4.4.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.nimbusds</groupId>
+            <artifactId>nimbus-jose-jwt</artifactId>
+            <version>9.37.3</version>
+        </dependency>
+
+
+
+        <!-- BCrypt dla hashowania haseł -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-crypto</artifactId>
+            <version>6.1.2</version>
+        </dependency>
+
+
         <!-- Kotlin -->
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
@@ -65,14 +88,6 @@
             <artifactId>jackson-module-kotlin</artifactId>
         </dependency>
 
-        <!-- MapStruct - REMOVED, using manual mapping -->
-        <!--
-        <dependency>
-            <groupId>org.mapstruct</groupId>
-            <artifactId>mapstruct</artifactId>
-            <version>${mapstruct.version}</version>
-        </dependency>
-        -->
 
         <!-- Test -->
         <dependency>

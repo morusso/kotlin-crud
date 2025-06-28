@@ -10,6 +10,7 @@ class UserMapper {
 
     fun toEntity(dto: UserRequestDTO): User {
         return User(
+            username = dto.username,
             email = dto.email,
             password = dto.password,
             isActive = dto.isActive,
@@ -21,6 +22,7 @@ class UserMapper {
     fun toDto(entity: User): UserResponseDTO {
         return UserResponseDTO(
             id = entity.id,
+            username = entity.username,
             email = entity.email,
             isActive = entity.isActive,
             firstName = entity.firstName,

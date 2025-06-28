@@ -4,8 +4,11 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 
 data class UserRequestDTO(
-    @field:NotBlank(message = "E-mail cannot be blank")
-    @field:Email(message = "Incorrect email address format")
+    @field:NotBlank(message = "username cannot be blank")
+    val username: String,
+
+    @field:NotBlank(message = "e-mail cannot be blank")
+    @field:Email(message = "incorrect email address format")
     val email: String,
 
     @field:NotNull(message = "password cannot be null")
@@ -14,9 +17,9 @@ data class UserRequestDTO(
     @field:NotNull(message = "password cannot be null")
     val isActive: Boolean,
 
-    @field:NotBlank(message = "First Name cannot be blank")
+    @field:NotBlank(message = "first Name cannot be blank")
     val firstName: String,
 
-    @field:NotNull(message = "Last Name cannot be null")
+    @field:NotNull(message = "last Name cannot be null")
     val lastName: String,
 )
