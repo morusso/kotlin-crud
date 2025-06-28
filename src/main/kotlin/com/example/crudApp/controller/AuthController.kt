@@ -164,6 +164,7 @@ class AuthController(
         @Valid @RequestBody loginRequest: LoginRequestDTO,
         bindingResult: BindingResult
     ): ResponseEntity<Any> {
+
         if (bindingResult.hasErrors()) {
             val errors = bindingResult.fieldErrors.map { "${it.field}: ${it.defaultMessage}" }
             return ResponseEntity.badRequest().body(

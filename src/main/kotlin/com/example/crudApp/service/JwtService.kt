@@ -1,6 +1,6 @@
 package com.example.crudApp.service
+
 import org.springframework.stereotype.Service
-import java.security.KeyPair
 import java.security.KeyPairGenerator
 import java.security.interfaces.RSAPrivateKey
 import java.security.interfaces.RSAPublicKey
@@ -88,8 +88,8 @@ class JwtService {
         email: String,
         expirationMinutes: Long = 60
     ): String {
-        val now        = Instant.now()
-        val expiresAt  = now.plus(expirationMinutes, ChronoUnit.MINUTES)
+        val now = Instant.now()
+        val expiresAt = now.plus(expirationMinutes, ChronoUnit.MINUTES)
 
         val claims = JWTClaimsSet.Builder()
             .subject(userId)
@@ -97,7 +97,7 @@ class JwtService {
             .issueTime(Date.from(now))
             .expirationTime(Date.from(expiresAt))
             .claim("username", username)
-            .claim("email",    email)
+            .claim("email", email)
             .jwtID(UUID.randomUUID().toString())
             .build()
 

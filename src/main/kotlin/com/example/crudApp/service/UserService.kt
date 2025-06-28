@@ -32,6 +32,9 @@ class UserService(
         val encodedPassword = passwordEncoder.encode(userRequestDTO.password)
 
         val user = userMapper.toEntity(userRequestDTO)
+
+        user.password = encodedPassword
+
         val savedUser = userRepository.save(user)
 
         val token = jwtService.generateToken(
@@ -57,14 +60,16 @@ class UserService(
 
     fun loginUser(loginRequest: LoginRequestDTO): AuthResponseDTO {
         val user = userRepository.findByUsername(loginRequest.username)
-            .orElseThrow { RuntimeException("invalid login or password") }
+            .orElseThrow { RuntimeException("Invalid login or password") }
 
-        if (!passwordEncoder.matches(loginRequest.password, user.password)) {
-            throw RuntimeException("invalid login or password")
+        val passwordMatches = passwordEncoder.matches(loginRequest.password, user.password)
+
+        if (!passwordMatches) {
+            throw RuntimeException("Invalid login or password")
         }
 
         if (!user.isActive) {
-            throw RuntimeException("account not active")
+            throw RuntimeException("Account not active")
         }
 
         val token = jwtService.generateToken(
