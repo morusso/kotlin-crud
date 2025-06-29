@@ -21,7 +21,7 @@ class AuthController(
 ) {
 
     // register endpoint
-    @PostMapping("/register") // POST /api/users/register
+    @PostMapping("/register") // POST /api/auth/register
     fun register(
         @Valid @RequestBody registerRequest: UserRequestDTO,
         bindingResult: BindingResult
@@ -47,7 +47,7 @@ class AuthController(
     }
 
     // login
-    @PostMapping("/login")  // POST /api/users/login
+    @PostMapping("/login")  // POST /api/auth/login
     fun login(
         @Valid @RequestBody loginRequest: LoginRequestDTO,
         bindingResult: BindingResult
@@ -74,7 +74,7 @@ class AuthController(
     }
 
     // validate token
-    @PostMapping("/verify")  // POST /api/users/verify
+    @PostMapping("/verify")  // POST /api/auth/verify
     fun verifyToken(@RequestHeader("Authorization") authHeader: String): ResponseEntity<Any> {
         val token = extractTokenFromHeader(authHeader)
 
@@ -94,7 +94,7 @@ class AuthController(
     }
 
     // refresh token endpoint
-    @PostMapping("/refresh")  // POST /api/users/refresh
+    @PostMapping("/refresh")  // POST /api/auth/refresh
     fun refreshToken(@RequestHeader("Authorization") authHeader: String): ResponseEntity<Any> {
         val token = extractTokenFromHeader(authHeader)
 
@@ -128,13 +128,13 @@ class AuthController(
     }
 
     // logout endpoint
-    @PostMapping("/logout")  // POST /api/users/logout
+    @PostMapping("/logout")  // POST /api/auth/logout
     fun logout(): ResponseEntity<Any> {
         return ResponseEntity.ok(mapOf("message" to "logout successful"))
     }
 
     // get public key
-    @GetMapping("/public-key")  // GET /api/users/public-key
+    @GetMapping("/public-key")  // GET /api/auth/public-key
     fun getPublicKey(): ResponseEntity<Map<String, String>> {
         val publicKey = jwtService.getPublicKeyBase64()
         return ResponseEntity.ok(mapOf("publicKey" to publicKey))
