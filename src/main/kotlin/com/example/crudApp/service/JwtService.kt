@@ -33,7 +33,7 @@ class JwtService {
     fun init() = getOrGenerateRSAKeys()
 
     private fun getOrGenerateRSAKeys() {
-        val keysDir = File("src/main/resources/keys") // katalog roboczy projektu
+        val keysDir = File("src/main/resources/keys")
         if (!keysDir.exists()) keysDir.mkdirs()
 
         val privateKeyFile = File(keysDir, "private_key.pem")
@@ -112,7 +112,7 @@ class JwtService {
 
     /* ------------------------- decrypt ------------------------ */
 
-    /** Zwraca odszyfrowany obiekt `EncryptedJWT` lub rzuca `RuntimeException`. */
+    /** return object `EncryptedJWT` or `RuntimeException`. */
     private fun decryptToken(token: String): EncryptedJWT =
         EncryptedJWT.parse(token).apply {
             decrypt(RSADecrypter(privateKey))
